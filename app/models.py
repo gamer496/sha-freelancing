@@ -12,11 +12,11 @@ studentschedules=db.Table("studentschedules",
 class Admin(db.Model):
     __tablename__="admin"
     id          =db.Column      (db.Integer,primary_key=True)
-    name        =db.Column      (db.String(200),unique=True)
+    username    =db.Column      (db.String(200),unique=True)
     password    =db.Column      (db.String(200))
 
-    def __init__(self,name,password):
-        self.name=name
+    def __init__(self,username,password):
+        self.username=username
         self.set_password(password)
 
     def set_password(self,password):
@@ -130,6 +130,11 @@ class Module(db.Model):
     def __init__(self,name):
         self.name=name
 
+    def serialize(self):
+        d["name"]=self.name
+        d["description"]=self.description
+        return d
+
     def __repr__(self):
         return "Module : %s"%(self.name)
 
@@ -171,3 +176,21 @@ class Schedule(db.Model):
     date        =db.Column      (db.String(50))
     time        =db.Column      (db.String(50))
     company_id  =db.Column      (db.Integer,db.ForeignKey("company.id"))
+
+    def __init__(self,name):
+        self.name=name
+
+    def half_serialize(self):
+        d={}
+        d["name"]=self.name
+        d["address"]=self.address
+
+    def full_serialize(self):
+        d=self.half_serialize()
+        d["date"]=self.date
+        d["time"]=self.time
+        d["company_id"]=self.company_id
+        return d
+
+    def __repr__(self):
+        return "Schedule : %s"%(self.name)
