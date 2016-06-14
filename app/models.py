@@ -25,6 +25,20 @@ class Admin(db.Model):
     def check_password(self,password):
         return check_password_hash(self.password,password)
 
+    def generate_auth_token(self):
+        s=Serializer(app.config["SECRET_KEY"])
+        return s.dumps({"id":self.id})
+
+    @staticmethod
+    def verify_auth_token(token):
+        s=Serializer(app.config["SECRET_KEY"])
+        try:
+            data=s.loads(token)
+        except BadSignature:
+            return None
+        user=Admin.query.get(data["id"])
+        return user
+
     def __repr__(self):
         return "Admin : %s"%(self.name)
 
