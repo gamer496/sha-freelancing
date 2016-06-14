@@ -323,17 +323,6 @@ def delete_student():
     except:
         return internal_error()
 
-@app.route("/get_student_details",methods=["GET","POST"])
-def get_student_details():
-    try:
-        student_id=int(request.json["student_id"].strip())
-    except:
-        return as_msg("no student id could be extracted")
-    try:
-        student=Student.query.get(student_id)
-        if not student:
-            return as_msg("no such student present")
-        return jsonify({"student_details":student.full_serialize()})
 
 @app.route("/delete_module",methods=["GET","POST"])
 def delete_module():
