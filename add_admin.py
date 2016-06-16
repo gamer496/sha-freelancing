@@ -1,4 +1,5 @@
 from app import app,db
+from app.models import Admin
 
 username=raw_input("Enter the name of the new admin:\n").strip()
 admins=Admin.query.filter(Admin.username==username)

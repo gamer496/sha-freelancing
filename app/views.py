@@ -7,23 +7,23 @@ from datetime import datetime
 import json
 
 @app.errorhandler(404)
-def page_not_found():
+def page_not_found(e):
     return jsonify({"err":"404 error page not found"}),404
 
 @app.errorhandler(403)
-def not_authorized():
+def not_authorized(e):
     return jsonify({"err":"You are not authorized to view this page"}),403
 
 @app.errorhandler(400)
-def something_missing():
+def something_missing(e):
     return jsonify({"err":"Arguments provided were not enough to carry out this request"})
 
 
 def internal_error(s=""):
-    return jsonify({"err":"internal server error.","description":s})
+    return after_request({"err":"internal server error.","description":s})
 
 def as_msg(s,errors=[]):
-    return jsonify({"err":"There seems to be some error","description":s,"errors":errors})
+    return after_request({"err":"There seems to be some error","description":s,"errors":errors})
 
 def as_success(s,warnings=[],errors=[]):
     d={}
@@ -34,32 +34,29 @@ def as_success(s,warnings=[],errors=[]):
         d["warnings"]=warnings
     if not d.has_key("partial_success"):
         d["success"]=s
-    return jsonify(d)
+    return after_request(d)
 
 @auth.verify_password
-def verify_password(token):
+def verify_password(username_or_token,password=None):
     admin=None
     company=None
     if request.json.has_key("company_token") and request.json.has_key("admin_token"):
         return False
     if request.json.has_key("company_token"):
         company=Company.verify_auth_token(request.json["company_token"])
+        g.company=company
+        return True
     elif request.json.has_key("admin_token"):
         admin=Admin.verify_auth_token(request.json["admin_token"])
-    if not admin and not company:
-        return False
+        g.admin=admin
+        return True
     else:
-        if admin:
-            g.admin=admin
-            return True
-        else:
-            g.company=company
-            return True
+        return False
 
 @app.route("/",methods=["GET","POST"])
 @app.route("/index",methods=["GET","POST"])
 def index():
-    return as_msg("application is working fine")
+    return as_success("application is working fine")
 
 
 @app.route("/registration",methods=["GET","POST"])
@@ -74,7 +71,7 @@ def registration():
         return as_msg("admin logged in")
     try:
         data=helper_for_views.parse_to_proper(data)
-        main_fields=fields.company["mandatory"]
+        main_fields=fields.company["primary"]
         errors=[]
         msg_errors=[]
         warnings=[]
@@ -120,6 +117,8 @@ def login():
         return as_msg("no emailid provided")
     elif not data.has_key("password"):
         return as_msg("no password provided")
+    emailid=data["emailid"]
+    password=data["password"]
     company=Company.query.filter(Company.emailid==emailid)
     if company.count()==0:
         return as_msg("email/password not correct")
@@ -146,19 +145,21 @@ def admin_login():
         return as_msg("no username provided")
     elif not data.has_key("password"):
         return as_msg("no password provided")
-    admin=Admin.query.filter(Admin.name==name)
+    username=data["username"]
+    password=data["password"]
+    admin=Admin.query.filter(Admin.username==username)
     if admin.count()==0:
         return as_msg("username/password not correct")
     else:
-        company=company[0]
-    if not company.check_password(password):
+        admin=admin[0]
+    if not admin.check_password(password):
         return as_msg("username/password not correct")
-    token=company.generate_auth_token()
+    token=admin.generate_auth_token()
     request.json["admin_token"]=token
     return as_success("successfully logged in")
 
 
-@app.route("/get_modules",methods=["GET","POST"])
+@app.route("/get_modules",methods=["POST"])
 @auth.login_required
 def get_modules():
     try:
@@ -166,7 +167,7 @@ def get_modules():
         modules=[]
         for module in all_modules:
             modules.append(module.serialize())
-        return jsonify({"modules":modules})
+        return after_request({"modules":modules})
     except:
         return internal_error()
 
@@ -181,7 +182,7 @@ def get_students():
         students=[]
         for student in module.students:
             students.append(student.half_serialize())
-        return jsonify({"students":students})
+        return after_request({"students":students})
     except:
         return internal_error()
 
@@ -193,7 +194,7 @@ def get_student_details():
         student=Student.query.get(student_id)
         if not student:
             return as_msg("no such student found")
-        return jsonify({"student_details":student})
+        return after_request({"student_details":student})
     except:
         return internal_error()
 
@@ -255,7 +256,7 @@ def get_schedule_details():
         schedule=Schedule.query.get(schedule_id)
         if not schedule:
             return as_msg("no such schedule found")
-        return jsonify({"schedule_details":schedule.full_serialize()})
+        return after_request({"schedule_details":schedule.full_serialize()})
     except:
         return internal_error()
 
@@ -268,7 +269,7 @@ def add_student():
     except:
         return as_msg("no json could be received")
     if not check_admin():
-        return not_authorized()
+        return not_authorized("")
     try:
         data=helper_for_views.parse_to_proper(data)
         main_fields=fields.company["mandatory"]
@@ -312,7 +313,7 @@ def delete_student():
         return as_msg("no student id could be extracted")
     try:
         if not check_admin():
-            return not_authorized()
+            return not_authorized("")
         student=Student.query.get(student_id)
         if student:
             db.session.delete(student)
@@ -331,6 +332,8 @@ def delete_module():
     except:
         return as_msg("no module id could be extracted")
     try:
+        if not check_admin():
+            return not_authorized("")
         module=Module.query.get(module_id)
         if not module:
             return as_msg("no such module found")
@@ -348,7 +351,7 @@ def add_module():
         return as_msg("no json data could be extracted")
     try:
         if not check_admin():
-            return not_authorized()
+            return not_authorized("")
         if not data.has_key("name"):
             return as_msg("name is an essential field")
         module=Module(data["name"].strip())
@@ -369,14 +372,13 @@ def check_admin():
             return True
     return False
 
-
-@app.after_request
-def after(response):
-    d=json.loads(response.get_data())
-    data=request.json
-    if data.has_key("company_token"):
-        d["company_token"]=data["company_token"]
-    if data.has_key("admin_token"):
-        d["admin_token"]=data["admin_token"]
-    response.set_data(json.dumps(d))
-    return response
+def after_request(d):
+    try:
+        data=request.json
+        if data.has_key("company_token"):
+            d["company_token"]=data["company_token"]
+        if data.has_key("admin_token"):
+            d["admin_token"]=data["admin_token"]
+        return jsonify(d)
+    except:
+        return jsonify(d)
