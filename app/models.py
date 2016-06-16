@@ -103,6 +103,7 @@ class Company(db.Model):
 
     def half_serialize(self):
         d={}
+        d["id"]=self.id
         d["name"]=self.name
         d["emailid"]=self.emailid
         return d
@@ -131,8 +132,13 @@ class Module(db.Model):
         self.name=name
 
     def serialize(self):
+        d={}
+        d["id"]=self.id
         d["name"]=self.name
-        d["description"]=self.description
+        if self.description:
+            d["description"]=self.description
+        else:
+            d["description"]=""
         return d
 
     def __repr__(self):
@@ -153,6 +159,7 @@ class Student(db.Model):
 
     def half_serialize(self):
         d={}
+        d["id"]=self.id
         d["name"]=self.name
         d["description"]=self.description
         return d
@@ -182,6 +189,7 @@ class Schedule(db.Model):
 
     def half_serialize(self):
         d={}
+        d["id"]=self.id
         d["name"]=self.name
         d["address"]=self.address
 

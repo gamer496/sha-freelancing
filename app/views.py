@@ -175,7 +175,7 @@ def get_modules():
 @auth.login_required
 def get_students():
     try:
-        id=int(request.json["module_id"].strip())
+        module_id=int(request.json["module_id"].strip())
         module=Module.query.get(module_id)
         if not module:
             return as_msg("no such module found")
@@ -190,7 +190,7 @@ def get_students():
 @auth.login_required
 def get_student_details():
     try:
-        id=int(request.json["student_id"].strip())
+        student_id=int(request.json["student_id"].strip())
         student=Student.query.get(student_id)
         if not student:
             return as_msg("no such student found")
@@ -199,6 +199,7 @@ def get_student_details():
         return internal_error()
 
 @app.route("/create_schedule",methods=["GET","POST"])
+@auth.login_required
 def create_schedule():
     try:
         data=request.json
@@ -206,12 +207,15 @@ def create_schedule():
         return as_msg("could not extract json data")
     try:
         data=helper_for_views.parse_to_proper(data)
-        main_fields=fields.schedule["mandatory"]
+        main_fields=fields.schedule["primary"]
         errors=[]
         msg_errors=[]
         warnings=[]
-        if not data.has_key("company_id"):
-            errors.append("company_id is an essential field")
+        if not data.has_key("company_id") and data.has_key("company_token"):
+            company=g.company
+            data["company_id"]=company.id
+        elif not data.has_key("company_id"):
+            errors.append("no such company found.")
         if not data.has_key("students"):
             errors.append("students is an essential field though they it can be an empty list")
         for field in main_fields:
@@ -229,14 +233,14 @@ def create_schedule():
             setattr(schedule,field,data[field])
         db.session.add(schedule)
         db.session.flush()
-        company=Company.query.get(data["company_id"].strip())
+        company=Company.query.get(int(data["company_id"]))
         if not company:
             return as_msg("no such company present")
         company.schedules.append(schedule)
         student_ids=data["students"]
         for student_id in student_ids:
             try:
-                student=Student.query.get(int(student_id).strip())
+                student=Student.query.get(int(student_id.strip()))
                 schedule.students.append(student)
             except:
                 pass
@@ -272,7 +276,7 @@ def add_student():
         return not_authorized("")
     try:
         data=helper_for_views.parse_to_proper(data)
-        main_fields=fields.company["mandatory"]
+        main_fields=fields.student["primary"]
         errors=[]
         msg_errors=[]
         warnings=[]
@@ -283,13 +287,13 @@ def add_student():
             return as_msg("essential fields missing",errors)
         student=Student(name=data["name"])
         for field in data.keys():
-            if not field in main_fields:
+            if not field in main_fields and not field in fields.student["secondary"]:
                 warnings.append("company has no attribute "+field)
                 continue
             if field=="name" or field=="module_id":
                 continue
-            setattr(company,field,data[field])
-        db.session.add(company)
+            setattr(student,field,data[field])
+        db.session.add(student)
         db.session.flush()
         try:
             module=Module.query.get(int(data["module_id"].strip()))
@@ -350,13 +354,17 @@ def add_module():
     except:
         return as_msg("no json data could be extracted")
     try:
+        data=helper_for_views.parse_to_proper(data)
         if not check_admin():
             return not_authorized("")
         if not data.has_key("name"):
             return as_msg("name is an essential field")
-        module=Module(data["name"].strip())
+        modules=Module.query.filter(Module.name==data["name"])
+        if not modules.count()==0:
+            return as_msg("module already present")
+        module=Module(data["name"])
         if data.has_key("description"):
-            module.description=data["description"].strip()
+            module.description=data["description"]
         db.session.add(module)
         db.session.commit()
         return as_success("module successfully added")
