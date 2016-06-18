@@ -194,7 +194,7 @@ def get_student_details():
         student=Student.query.get(student_id)
         if not student:
             return as_msg("no such student found")
-        return after_request({"student_details":student})
+        return after_request({"student_details":student.full_serialize()})
     except:
         return internal_error()
 
@@ -211,8 +211,10 @@ def create_schedule():
         errors=[]
         msg_errors=[]
         warnings=[]
-        if not data.has_key("company_id") and data.has_key("company_token"):
-            company=g.company
+        if data.has_key("company_token"):
+            company=Company.verify_auth_token()
+            if not company:
+                return as_msg("no such company present")
             data["company_id"]=company.id
         elif not data.has_key("company_id"):
             errors.append("no such company found.")
@@ -241,7 +243,8 @@ def create_schedule():
         for student_id in student_ids:
             try:
                 student=Student.query.get(int(student_id.strip()))
-                schedule.students.append(student)
+                if student:
+                    schedule.students.append(student)
             except:
                 pass
         db.session.add(schedule)
