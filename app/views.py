@@ -59,7 +59,7 @@ def index():
     return as_success("application is working fine")
 
 
-@app.route("/registration",methods=["GET","POST"])
+@app.route("/registration",methods=["POST"])
 def registration():
     try:
         data=request.json
@@ -102,7 +102,7 @@ def registration():
         return internal_error()
 
 
-@app.route("/login",methods=["GET","POST"])
+@app.route("/login",methods=["POST"])
 def login():
     try:
         data=request.json
@@ -130,7 +130,7 @@ def login():
     request.json["company_token"]=token
     return as_success("successfully logged in")
 
-@app.route("/admin_login",methods=["GET","POST"])
+@app.route("/admin_login",methods=["POST"])
 def admin_login():
     try:
         data=request.json
@@ -159,8 +159,7 @@ def admin_login():
     return as_success("successfully logged in")
 
 
-@app.route("/get_modules",methods=["POST"])
-@auth.login_required
+@app.route("/get_modules",methods=["GET"])
 def get_modules():
     try:
         all_modules=Module.query.all()
@@ -171,11 +170,10 @@ def get_modules():
     except:
         return internal_error()
 
-@app.route("/get_students",methods=["GET","POST"])
-@auth.login_required
-def get_students():
+@app.route("/get_students/<int:module_id>",methods=["GET"])
+def get_students(module_id=1):
     try:
-        module_id=int(request.json["module_id"].strip())
+        module_id=int(module_id)
         module=Module.query.get(module_id)
         if not module:
             return as_msg("no such module found")
@@ -212,7 +210,7 @@ def create_schedule():
         msg_errors=[]
         warnings=[]
         if data.has_key("company_token"):
-            company=Company.verify_auth_token()
+            company=Company.verify_auth_token(data["company_token"])
             if not company:
                 return as_msg("no such company present")
             data["company_id"]=company.id
@@ -251,7 +249,7 @@ def create_schedule():
         db.session.commit()
         return as_success("schedule added successfully")
     except:
-        return internal_error()
+        return internal_server_error()
 
 @app.route("/get_schedule_details",methods=["GET","POST"])
 def get_schedule_details():
