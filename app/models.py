@@ -149,6 +149,7 @@ class Student(db.Model):
     id          =db.Column      (db.Integer,primary_key=True)
     name        =db.Column      (db.String(200))
     degree      =db.Column      (db.String(200))
+    city        =db.Column      (db.String(200))
     college     =db.Column      (db.TEXT)
     description =db.Column      (db.TEXT)
     module_id   =db.Column      (db.Integer,db.ForeignKey("module.id"))
@@ -169,6 +170,7 @@ class Student(db.Model):
         d["degree"]=self.degree
         d["college"]=self.college
         d["module_id"]=self.module_id
+        d["city"]=self.city
         return d
 
     def __repr__(self):

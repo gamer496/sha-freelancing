@@ -170,7 +170,7 @@ def get_modules():
     except:
         return internal_error()
 
-@app.route("/get_students/<int:module_id>",methods=["GET"])
+@app.route("/modules/<int:module_id>/students",methods=["GET"])
 def get_students(module_id=1):
     try:
         module_id=int(module_id)
@@ -193,6 +193,17 @@ def get_student_details():
         if not student:
             return as_msg("no such student found")
         return after_request({"student_details":student.full_serialize()})
+    except:
+        return internal_error()
+
+@app.route("/modules/<int:module_id>/description",methods=["GET"])
+def get_description(module_id=1):
+    try:
+        module_id=int(module_id)
+        module=Module.query.get(module_id)
+        if not module:
+            return as_msg("no such module found")
+        return after_request({"description":module.description})
     except:
         return internal_error()
 

@@ -13,6 +13,7 @@ for i in range(0,n):
     description=raw_input("Enter description.\n").strip()
     degree=raw_input("Enter degree.\n").strip()
     college=raw_input("Enter college.\n").strip()
+    city=raw_input("Enter city.\n").strip()
     try:
         student=Student(name)
         student.description=description
