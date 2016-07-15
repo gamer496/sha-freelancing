@@ -366,6 +366,8 @@ def add_module():
     except:
         return as_msg("no json data could be extracted")
     try:
+        if not check_admin():
+            return not_authorized("")
         data=helper_for_views.parse_to_proper(data)
         if not check_admin():
             return not_authorized("")
@@ -383,6 +385,21 @@ def add_module():
     except:
         return internal_error()
 
+
+@app.route("/see_schedules/<int:company_id>",methods=["GET","POST"])
+def see_schedules(company_id=1):
+    try:
+        company_id=int(company_id)
+    except:
+        return as_msg("no company_id could be parsed.")
+    try:
+        schedules=Schedule.query.filter(Schedule.company_id==company_id)
+        final_schedules=[]
+        for schedule in schedules:
+            final_schedules.append(schedule.half_serialize())
+        return after_request({"schedules":schedules})
+    except:
+        return internal_error()
 
 
 def check_admin():
