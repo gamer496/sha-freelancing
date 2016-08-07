@@ -14,6 +14,8 @@ for i in range(0,n):
     degree=raw_input("Enter degree.\n").strip()
     college=raw_input("Enter college.\n").strip()
     city=raw_input("Enter city.\n").strip()
+    emailid=raw_input("Enter emailid.\n").strip()
+    phone_no=raw_input("Enter phone no.\n").strip()
     try:
         student=Student(name)
         student.description=description

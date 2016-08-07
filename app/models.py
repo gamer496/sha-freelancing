@@ -150,6 +150,8 @@ class Student(db.Model):
     name        =db.Column      (db.String(200))
     degree      =db.Column      (db.String(200))
     city        =db.Column      (db.String(200))
+    phone_no    =db.Column      (db.String(20))
+    emailid     =db.Column      (db.String(200))
     college     =db.Column      (db.TEXT)
     description =db.Column      (db.TEXT)
     module_id   =db.Column      (db.Integer,db.ForeignKey("module.id"))
@@ -171,6 +173,8 @@ class Student(db.Model):
         d["college"]=self.college
         d["module_id"]=self.module_id
         d["city"]=self.city
+        d["emailid"]=self.emailid
+        d["phone_no"]=self.phone_no
         return d
 
     def __repr__(self):
@@ -180,19 +184,17 @@ class Student(db.Model):
 class Schedule(db.Model):
     __tablename__="schedule"
     id          =db.Column      (db.Integer,primary_key=True)
-    name        =db.Column      (db.String(200))
     address     =db.Column      (db.TEXT)
     date        =db.Column      (db.String(50))
     time        =db.Column      (db.String(50))
     company_id  =db.Column      (db.Integer,db.ForeignKey("company.id"))
 
-    def __init__(self,name):
-        self.name=name
+    def __init__(self,company_id):
+        self.company_id=company_id
 
     def half_serialize(self):
         d={}
         d["id"]=self.id
-        d["name"]=self.name
         d["address"]=self.address
 
     def full_serialize(self):
@@ -203,4 +205,4 @@ class Schedule(db.Model):
         return d
 
     def __repr__(self):
-        return "Schedule : %s"%(self.name)
+        return "Schedule at: %s"%(self.address)

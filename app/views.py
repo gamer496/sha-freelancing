@@ -234,12 +234,12 @@ def create_schedule():
                 errors.append(field+" is an essential field")
         if not len(errors)==0:
             return as_msg("essential fields missing",errors)
-        schedule=Schedule(name=data["name"])
+        schedule=Schedule(name=data["company_id"])
         for field in data.keys():
             if not field in main_fields:
                 warnings.append("schedule has no attribute "+field)
                 continue
-            if field=="name":
+            if field=="company_id":
                 continue
             setattr(schedule,field,data[field])
         db.session.add(schedule)
