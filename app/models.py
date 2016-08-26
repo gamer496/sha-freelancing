@@ -45,16 +45,17 @@ class Admin(db.Model):
 
 class Company(db.Model):
     __tablename__="company"
-    id          =db.Column      (db.Integer,primary_key=True)
-    name        =db.Column      (db.String(200))
-    password    =db.Column      (db.String(200))
-    pan_no      =db.Column      (db.String(50),unique=True)
-    tin_no      =db.Column      (db.String(50),unique=True)
-    phone_no    =db.Column      (db.String(50),unique=True)
-    landline_no =db.Column      (db.String(50),unique=True)
-    emailid     =db.Column      (db.String(50),unique=True,index=True)
-    member_since=db.Column      (db.DateTime)
-    schedules   =db.relationship("Schedule",backref="company",lazy="dynamic")
+    id              =db.Column      (db.Integer,primary_key=True)
+    name            =db.Column      (db.String(200))
+    password        =db.Column      (db.String(200))
+    pan_no          =db.Column      (db.String(50),unique=True)
+    tin_no          =db.Column      (db.String(50),unique=True)
+    phone_no        =db.Column      (db.String(50),unique=True)
+    landline_no     =db.Column      (db.String(50),unique=True)
+    contact_person  =db.Column  (db.String(200))
+    emailid         =db.Column      (db.String(50),unique=True,index=True)
+    member_since    =db.Column      (db.DateTime)
+    schedules       =db.relationship("Schedule",backref="company",lazy="dynamic")
 
     def __init__(self,name,password):
         self.name=name
@@ -115,6 +116,7 @@ class Company(db.Model):
         d["landline_no"]=self.landline_no
         d["pan_no"]=self.pan_no
         d["tin_no"]=self.tin_no
+        d["contact_person"]=self.contact_person
         return d
 
     def __repr__(self):
